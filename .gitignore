@@ -1,0 +1,9 @@
+__init__.py
+*.pyc
+.*.swp
+.#*
+*#
+*~
+*.root
+*.log
+.DS_Store

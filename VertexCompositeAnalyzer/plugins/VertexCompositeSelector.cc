@@ -876,7 +876,7 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
 			   cout << "bdt_weight = " << mva_value << endl;
 			   cout << "bdt_cut_value = " << bdt_cut_value << endl;
 			   */
-			if (bdt_cut_value < -1) continue;
+			//if (bdt_cut_value < -1) continue;
 
 			theMVANew.push_back(mva_value);
 

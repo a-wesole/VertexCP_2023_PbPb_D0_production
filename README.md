@@ -26,6 +26,14 @@ cd CMSSW_13_2_11/src
 cmsenv
 git cms-init
 
+git clone git@github.com:a-wesole/VertexCP_2023_PbPb_D0_production.git
+
+scram b - j8
+
+cd VertexCompositeAnalysis/VertexCompositeProducer/test
+
+cmsRun run_edm_and_ttree_DATA.py 
+
 
 ```
 

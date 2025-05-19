@@ -3,7 +3,7 @@
 // Package:    VertexCompositeProducer
 //
 // Class:      D0Producer
-// 
+//
 /**\class D0Producer D0Producer.cc VertexCompositeAnalysis/VertexCompositeProducer/src/D0Producer.cc
 
  Description: <one line class summary>
@@ -16,65 +16,58 @@
 //
 //
 
-
 // system include files
 #include <memory>
 
 #include "VertexCompositeAnalysis/VertexCompositeProducer/interface/D0Producer.h"
 
 // Constructor
-D0Producer::D0Producer(const edm::ParameterSet& iConfig) :
- theVees(iConfig, consumesCollector())
+D0Producer::D0Producer(const edm::ParameterSet &iConfig) : theCandidates(iConfig, consumesCollector())
 {
-  produces< reco::VertexCompositeCandidateCollection >("D0");
+   produces<pat::CompositeCandidateCollection>("D0");
 }
 
 // (Empty) Destructor
-D0Producer::~D0Producer() {
+D0Producer::~D0Producer()
+{
 }
-
 
 //
 // Methods
 //
 
 // Producer Method
-void D0Producer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
+void D0Producer::produce(edm::Event &iEvent, const edm::EventSetup &iSetup)
+{
    using namespace edm;
 
    // Create D0Fitter object which reconstructs the vertices and creates
-//   D0Fitter theVees(theParams, iEvent, iSetup);
-
-   theVees.fitAll(iEvent, iSetup);
+   theCandidates.fitAll(iEvent, iSetup);
 
    // Create auto_ptr for each collection to be stored in the Event
-//   std::auto_ptr< reco::VertexCompositeCandidateCollection >
-//     d0Candidates( new reco::VertexCompositeCandidateCollection );
-//
-   auto d0Candidates = std::make_unique<reco::VertexCompositeCandidateCollection>();
-   d0Candidates->reserve( theVees.getD0().size() );
+   auto d0Candidates = std::make_unique<pat::CompositeCandidateCollection>();
+   d0Candidates->reserve(theCandidates.getD0().size());
 
-   std::copy( theVees.getD0().begin(),
-              theVees.getD0().end(),
-              std::back_inserter(*d0Candidates) );
+   std::copy(theCandidates.getD0().begin(),
+             theCandidates.getD0().end(),
+             std::back_inserter(*d0Candidates));
 
    // Write the collections to the Event
-   iEvent.put( std::move(d0Candidates), std::string("D0") );
-    
+   iEvent.put(std::move(d0Candidates), std::string("D0"));
 
-   theVees.resetAll();
+   theCandidates.resetAll();
 }
 
-
-//void D0Producer::beginJob() {
-void D0Producer::beginJob() {
+// void D0Producer::beginJob() {
+void D0Producer::beginJob()
+{
 }
 
-
-void D0Producer::endJob() {
+void D0Producer::endJob()
+{
 }
 
-//define this as a plug-in
+// define this as a plug-in
 #include "FWCore/PluginManager/interface/ModuleDef.h"
 
 DEFINE_FWK_MODULE(D0Producer);

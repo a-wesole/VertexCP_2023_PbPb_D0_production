@@ -2,7 +2,7 @@
 //
 // Package:    VertexCompositeProducer
 // Class:      D0Producer
-// 
+//
 /**\class D0Producer D0Producer.h VertexCompositeAnalysis/VertexCompositeProducer/interface/D0Producer.h
 
  Description: <one line class summary>
@@ -11,7 +11,7 @@
      <Notes on implementation>
 */
 //
-// Original Author:  Wei Li 
+// Original Author:  Wei Li
 //
 //
 
@@ -37,23 +37,22 @@
 
 #include "VertexCompositeAnalysis/VertexCompositeProducer/interface/D0Fitter.h"
 
-class D0Producer : public edm::one::EDProducer<> {
+class D0Producer : public edm::one::EDProducer<>
+{
 public:
   using MVACollection = std::vector<float>;
 
-  explicit D0Producer(const edm::ParameterSet&);
+  explicit D0Producer(const edm::ParameterSet &);
   ~D0Producer();
 
 private:
-  //virtual void beginJob() ;
   virtual void beginJob();
-  virtual void produce(edm::Event&, const edm::EventSetup&);
-  virtual void endJob() ;
+  virtual void produce(edm::Event &, const edm::EventSetup &);
+  virtual void endJob();
 
   bool useAnyMVA_;
 
-  D0Fitter theVees; 
-//  edm::ParameterSet theParams;
+  D0Fitter theCandidates;
 };
 
 #endif

@@ -2,7 +2,7 @@
 //
 // Package:    VertexCompositeProducer
 // Class:      D0Fitter
-// 
+//
 /**\class D0Fitter D0Fitter.h VertexCompositeAnalysis/VertexCompositeProducer/interface/D0Fitter.h
 
  Description: <one line class summary>
@@ -33,6 +33,7 @@
 #include "RecoVertex/KalmanVertexFit/interface/KalmanVertexFitter.h"
 #include "RecoVertex/AdaptiveVertexFit/interface/AdaptiveVertexFitter.h"
 
+#include "RecoVertex/KinematicFitPrimitives/interface/KinematicVertex.h"
 #include "RecoVertex/KinematicFit/interface/KinematicParticleVertexFitter.h"
 #include "RecoVertex/KinematicFit/interface/KinematicParticleFitter.h"
 #include "RecoVertex/KinematicFit/interface/MassKinematicConstraint.h"
@@ -45,7 +46,15 @@
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 #include "MagneticField/VolumeBasedEngine/interface/VolumeBasedMagneticField.h"
 
-#include "DataFormats/Candidate/interface/VertexCompositeCandidate.h"
+// IP/DCA TOOLS
+#include "TrackingTools/GeomPropagators/interface/AnalyticalImpactPointExtrapolator.h"
+#include "TrackingTools/PatternTools/interface/TransverseImpactPointExtrapolator.h"
+#include "TrackingTools/IPTools/interface/IPTools.h"
+#include "RecoVertex/VertexPrimitives/interface/ConvertToFromReco.h"
+#include "DataFormats/GeometryCommonDetAlgo/interface/Measurement1D.h"
+
+// #include "DataFormats/Candidate/interface/VertexCompositeCandidate.h"
+#include "DataFormats/PatCandidates/interface/CompositeCandidate.h"
 #include "DataFormats/RecoCandidate/interface/RecoChargedCandidate.h"
 #include "DataFormats/Math/interface/angle.h"
 #include "DataFormats/TrackingRecHit/interface/TrackingRecHit.h"
@@ -54,11 +63,11 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
 #include "Geometry/CommonDetUnit/interface/TrackingGeometry.h"
-//#include "Geometry/CommonDetUnit/interface/GeomDetUnit.h"
+// #include "Geometry/CommonDetUnit/interface/GeomDetUnit.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/CommonDetUnit/interface/GeomDet.h"
-//#include "Geometry/TrackerGeometryBuilder/interface/GluedGeomDet.h"
+// #include "Geometry/TrackerGeometryBuilder/interface/GluedGeomDet.h"
 
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 
@@ -74,28 +83,27 @@
 #include <algorithm>
 #include <map>
 
-class D0Fitter {
- public:
-  D0Fitter(const edm::ParameterSet& theParams, edm::ConsumesCollector && iC);
+class D0Fitter
+{
+public:
+  D0Fitter(const edm::ParameterSet &theParams, edm::ConsumesCollector &&iC);
   ~D0Fitter();
 
-  void fitAll(const edm::Event& iEvent, const edm::EventSetup& iSetup);
+  void fitAll(const edm::Event &iEvent, const edm::EventSetup &iSetup);
 
-  // Switching to L. Lista's reco::Candidate infrastructure for D0 storage
-  const reco::VertexCompositeCandidateCollection& getD0() const;
-  const std::vector<float>& getMVAVals() const; 
+  const pat::CompositeCandidateCollection &getD0() const;
+  const std::vector<float> &getMVAVals() const;
 
-//  auto_ptr<edm::ValueMap<float> > getMVAMap() const;
   void resetAll();
 
- private:
+private:
   // STL vector of VertexCompositeCandidate that will be filled with VertexCompositeCandidates by fitAll()
-  reco::VertexCompositeCandidateCollection theD0s;
+  pat::CompositeCandidateCollection theD0s;
 
   // Tracker geometry for discerning hit positions
-  const TrackerGeometry* trackerGeom;
+  const TrackerGeometry *trackerGeom;
 
-  const MagneticField* magField;
+  const MagneticField *magField;
 
   edm::ESGetToken<MagneticField, IdealMagneticFieldRecord> bField_esToken_;
 
@@ -103,7 +111,7 @@ class D0Fitter {
   edm::InputTag vtxAlg;
   edm::EDGetTokenT<reco::TrackCollection> token_tracks;
   edm::EDGetTokenT<reco::VertexCollection> token_vertices;
-  edm::EDGetTokenT<edm::ValueMap<reco::DeDxData> > token_dedx;
+  edm::EDGetTokenT<edm::ValueMap<reco::DeDxData>> token_dedx;
   edm::EDGetTokenT<reco::BeamSpot> token_beamSpot;
 
   // Cuts
@@ -111,7 +119,7 @@ class D0Fitter {
   double mPiKCutMax;
   double tkDCACut;
   double tkChi2Cut;
-  int    tkNhitsCut;
+  int tkNhitsCut;
   double tkPtErrCut;
   double tkPtCut;
   double tkEtaCut;
@@ -125,35 +133,29 @@ class D0Fitter {
   double collinCut2D;
   double collinCut3D;
   double d0MassCut;
+  double d0AbsYCut;
   double dauTransImpactSigCut;
   double dauLongImpactSigCut;
   double VtxChiProbCut;
   double dPtCut;
   double alphaCut;
   double alpha2DCut;
-  bool   isWrongSign;
+  bool isWrongSign;
 
   std::vector<reco::TrackBase::TrackQuality> qualities;
 
-  //setup mva selector
-  bool useAnyMVA_;
+  // setup mva selector
   std::vector<bool> useMVA_;
   std::vector<double> min_MVA_;
   std::string mvaType_;
   std::string forestLabel_;
-  GBRForest * forest_;
+  GBRForest *forest_;
   bool useForestFromDB_;
 
   std::vector<float> mvaVals_;
   edm::ESGetToken<GBRForest, GBRWrapperRcd> mvaToken_;
 
-//  auto_ptr<edm::ValueMap<float> >mvaValValueMap;
-//  MVACollection mvas; 
-
   std::string dbFileName_;
-
-  std::vector<double> inputValues;
-
 };
 
 #endif

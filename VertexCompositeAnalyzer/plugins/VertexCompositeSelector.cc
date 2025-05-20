@@ -26,7 +26,8 @@
 #include "DataFormats/Common/interface/Ref.h"
 #include "FWCore/Framework/interface/ConsumesCollector.h"
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/one/EDProducer.h"
+//#include "FWCore/Framework/interface/one/EDProducer.h"
+#include "FWCore/Framework/interface/stream/EDProducer.h"
 #include "FWCore/Framework/interface/ESHandle.h"
 
 #include "FWCore/Framework/interface/Event.h"
@@ -54,6 +55,8 @@
 #include "TrackingTools/Records/interface/TransientTrackRecord.h"
 #include "TrackingTools/PatternTools/interface/ClosestApproachInRPhi.h"
 #include "TrackingTools/PatternTools/interface/TSCBLBuilderNoMaterial.h"
+#include "TrackingTools/PatternTools/interface/TwoTrackMinimumDistance.h"
+
 
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 
@@ -66,6 +69,7 @@
 
 #include "BDT_header.h"
 
+#include "PhysicsTools/ONNXRuntime/interface/ONNXRuntime.h"
 //
 // class decleration
 //
@@ -76,6 +80,7 @@ const int y_bins = 2;
 const int cent_bins = 4;
 const int pT_bins = 10;
 using namespace std;
+using namespace cms::Ort;
 
 using CC = pat::CompositeCandidate;
 using CCC = pat::CompositeCandidateCollection;
@@ -148,10 +153,12 @@ class BDTHandler
 		}
 };
 
-class VertexCompositeSelector : public edm::one::EDProducer<>
+class VertexCompositeSelector : public edm::stream::EDProducer<edm::GlobalCache<ONNXRuntime>>
 {
 	public:
 		explicit VertexCompositeSelector(const edm::ParameterSet &);
+		static std::unique_ptr<ONNXRuntime> initializeGlobalCache(const edm::ParameterSet &);
+		static void globalEndJob(const ONNXRuntime *);
 		~VertexCompositeSelector();
 
 
@@ -167,6 +174,10 @@ class VertexCompositeSelector : public edm::one::EDProducer<>
 		vector<double> inputValues;
 		ReadBDT *mva;
 		BDTHandler bdt;
+		std::vector<std::string> input_names_;
+		std::vector<std::vector<int64_t>> input_shapes_;
+		FloatArrays data_; 
+		std::string onnxModelPath_;
 
 		// ----------member data ---------------------------
 
@@ -320,7 +331,7 @@ class VertexCompositeSelector : public edm::one::EDProducer<>
 //
 
 VertexCompositeSelector::VertexCompositeSelector(const edm::ParameterSet &iConfig)
-	:bdt("/home/awesole/VertexCP_up/CMSSW_13_2_11/src/VertexCompositeAnalysis/VertexCompositeAnalyzer/data/bdt_cuts.csv")
+	:bdt("VertexCP_2023_PbPb_D0_production/VertexCompositeAnalyzer/data/bdt_cuts.csv")
 {
 	string a1 = "log3ddls";
 	string a2 = "nVtxProb";
@@ -332,8 +343,8 @@ VertexCompositeSelector::VertexCompositeSelector(const edm::ParameterSet &iConfi
 	string a8 = "nzDCASigD1";
 	string a9 = "nzDCASigD2";
 	string a10 = "npT";
-	string a11="ny";
-	string a12="ncent";
+	string a11 =  "ny";
+	string a12 = "ncent";
 
 	theInputVars.push_back(a1);
 	theInputVars.push_back(a2);
@@ -421,6 +432,16 @@ VertexCompositeSelector::VertexCompositeSelector(const edm::ParameterSet &iConfi
 	if (iConfig.exists("useAnyMVA"))
 		useAnyMVA_ = iConfig.getParameter<bool>("useAnyMVA");
 
+	  if (useAnyMVA_) {
+    	if (iConfig.exists("input_names")||iConfig.exists("output_names")) {
+    	  input_names_ = iConfig.getParameter<std::vector<std::string>>("input_names");
+    	  output_names_ = iConfig.getParameter<std::vector<std::string>>("output_names");
+    	} else {
+    	  throw cms::Exception("Configuration") << "onnxModelName not provided in ParameterSet";
+    	}
+	  }
+ 	
+
 
 	mvaType_ = type;
 
@@ -434,6 +455,30 @@ VertexCompositeSelector::VertexCompositeSelector(const edm::ParameterSet &iConfi
 	isKaonD1 = false;
 	isKaonD2 = false;
 }
+std::unique_ptr<ONNXRuntime> VertexCompositeSelector::initializeGlobalCache(const edm::ParameterSet &iConfig) {
+   bool useAnyMVA = iConfig.exists("useAnyMVA") ? iConfig.getParameter<bool>("useAnyMVA") : false;
+
+   if (!useAnyMVA) return nullptr;
+
+   if (iConfig.exists("onnxModelFileName")) {
+     std::string onnxModelPath = iConfig.getParameter<std::string>("onnxModelFileName");
+
+     edm::FileInPath fip(Form("VertexCompositeAnalysis/VertexCompositeProducer/data/%s", onnxModelPath.c_str()));
+     std::string fullPath = fip.fullPath();
+
+     std::ifstream testFile(fullPath);
+     if (!testFile.good()) {
+       throw cms::Exception("Configuration") << "cannot find ONNX Model in : " << fullPath;
+     }
+     testFile.close();
+
+      return std::make_unique<ONNXRuntime>(fip.fullPath());
+
+   }
+
+   return nullptr;
+}
+void VertexCompositeSelector::globalEndJob(const ONNXRuntime *cache) {}
 
 VertexCompositeSelector::~VertexCompositeSelector()
 {
@@ -849,10 +894,47 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
 		dzos2 = dzbest2 / dzerror2;
 		dxyos2 = dxybest2 / dxyerror2;
 
+		// //trkDCA
+		// FreeTrajectoryState posState = dau1->impactPointTSCP().theState();
+		// FreeTrajectoryState negState = dau2->impactPointTSCP().theState();
+		// ClosestApproachInRPhi cApp;
+		// cApp.calculate(posStateNew, negStateNew);
+		// if( !cApp.status() ) continue;
+		// float dca = fabs( cApp.distance() );
+		// TwoTrackMinimumDistance minDistCalculator;
+		// minDistCalculator.calculate(posState, negState);
+		// dca = minDistCalculator.distance();
+		// cxPt = minDistCalculator.crossingPoint();
+		// GlobalError posErr = posStateNew.cartesianError().position();
+		// GlobalError negErr = negStateNew.cartesianError().position();
+
 
 		mva_value = -999.9;
 		if (useAnyMVA_)
 		{
+
+				 cms::Ort::FloatArrays data_;
+				 onnxVals_[0] = pt;
+				 onnxVals_[1] = y;
+				 onnxVals_[2] = vtxChi2;
+				 onnxVals_[3] = centrality;
+				 onnxVals_[4] = agl;
+				 onnxVals_[5] = agl_abs;
+				 onnxVals_[6] = agl2D;
+				 onnxVals_[7] = agl2D_abs
+				 onnxVals_[8] = dl;
+				 onnxVals_[9] = dlos;
+				 onnxVals_[10] = dl2D;
+				 onnxVals_[11] = dlos2D;
+				 onnxVals_[12] = pt1;
+				 onnxVals_[13] = eta1;
+				 onnxVals_[14] = pt2;
+				 onnxVals_[15] = eta2;
+				 onnxVals_[16] = ptErr1;
+				 onnxVals_[17] = ptErr2;
+				//  onnxVals_[18] = dca;
+				 std::vector<float> outputs = onnxRuntime_->run(input_names_, data_, input_shapes_,output_names_)[0];
+				 float onnxVal = outputs[1];
 
 			inputValues.clear();
 			inputValues.push_back(log10(dlos)); // 00
@@ -879,8 +961,12 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
 			//if (bdt_cut_value < -1) continue;
 
 			theMVANew.push_back(mva_value);
+		//	mvaVals_.push_back(onnxVal);
+
 
 		}
+
+
 
 		// select MVA value
 		theVertexComps.push_back(trk);

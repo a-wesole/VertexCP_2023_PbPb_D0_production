@@ -293,9 +293,10 @@ VertexCompositeTreeProducer::VertexCompositeTreeProducer(const edm::ParameterSet
 	}
 
 
-	if(useAnyMVA_ && iConfig.exists("MVACollection") && iConfig.exists("MVACollection2"))
+	if(useAnyMVA_ && iConfig.exists("MVACollection") && iConfig.exists("MVACollection2")) {
 		MVAValues_Token_ = consumes<MVACollection>(iConfig.getParameter<edm::InputTag>("MVACollection"));
-		MVAValues_Token_2 = consumes<MVACollection>(iConfig.getParameter<edm::InputTag>("MVACollection2"));
+	MVAValues_Token_2 = consumes<MVACollection>(iConfig.getParameter<edm::InputTag>("MVACollection2"));
+	}
 }
 
 
@@ -492,7 +493,7 @@ VertexCompositeTreeProducer::fillRECO(const edm::Event& iEvent, const edm::Event
 
 		mva[it] = 0.0;
 		if(useAnyMVA_){ mva[it] = (*mvavalues)[it];
-		mva_xg[it] = (*mvavalues_xg)[it]; //xgboost
+			mva_xg[it] = (*mvavalues_xg)[it]; //xgboost
 		}
 
 		double px = trk.px();
@@ -865,7 +866,7 @@ VertexCompositeTreeProducer::initTree()
 		VertexCompositeNtuple->Branch("phi",&phi,"phi[candSize]/F");
 		VertexCompositeNtuple->Branch("mass",&mass,"mass[candSize]/F");
 		if(useAnyMVA_){ VertexCompositeNtuple->Branch("mva",&mva,"mva[candSize]/F");
-		VertexCompositeNtuple->Branch("mva_xg",&mva_xg,"mva_xg[candSize]/F");}
+			VertexCompositeNtuple->Branch("mva_xg",&mva_xg,"mva_xg[candSize]/F");}
 
 		if(!isSkimMVA_)  
 		{

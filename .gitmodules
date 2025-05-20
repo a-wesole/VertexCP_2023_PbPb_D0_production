@@ -1,0 +1,3 @@
+[submodule "HeavyIonsAnalysis"]
+	path = HeavyIonsAnalysis
+	url = git@github.com:a-wesole/HeavyIonsAnalysis.git

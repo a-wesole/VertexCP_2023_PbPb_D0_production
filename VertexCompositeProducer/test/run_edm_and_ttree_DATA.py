@@ -115,6 +115,9 @@ process.d0selectorNewReduced.DCAValCollection = cms.InputTag("generalD0Candidate
 process.d0selectorNewReduced.DCAErrCollection = cms.InputTag("generalD0CandidatesNew:DCAErrorsD0")
 process.d0selectorNewReduced.cand3DDecayLengthSigMin = cms.untracked.double(0.)
 process.d0selectorNewReduced.cand3DPointingAngleMax = cms.untracked.double(1.0)
+process.d0selectorNewReduced.input_names = cms.vstring('input')
+process.d0selectorNewReduced.output_names = cms.vstring('probabilities')
+process.d0selectorNewReduced.onnxModelFileName = cms.string("XGBoost_Model_0428_0_OnlyPrompt.onnx")
 process.d0selectorNewReduced.trkNHitMin = cms.untracked.int32(11)
 process.d0selectorNewReduced.isCentrality = cms.bool(True) # Centrality 
 process.d0selectorNewReduced.useAnyMVA = cms.bool(True); #only set true if you are assigning BDT values  +++change 
@@ -131,6 +134,7 @@ process.d0ana_newreduced.doGenNtuple = cms.untracked.bool(False) #MConly
 process.d0ana_newreduced.doGenMatching = cms.untracked.bool(False) #MConly
 process.d0ana_newreduced.useAnyMVA = cms.bool(True); #only set true if you are assigning BDT values +++ change  
 process.d0ana_newreduced.MVACollection = cms.InputTag("d0selectorNewReduced:MVAValuesNewD0:ANASKIM")
+process.d0ana_newreduced.MVACollection2 = cms.InputTag("d0selectorNewReduced:MVAValuesNewD0_xg:ANASKIM")
 
 
 process.d0ana_seq2 = cms.Sequence(process.d0selectorNewReduced * process.d0ana_newreduced)

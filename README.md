@@ -26,7 +26,7 @@ cd CMSSW_13_2_11/src
 cmsenv
 git cms-init
 
-git clone git@github.com:a-wesole/VertexCP_2023_PbPb_D0_production.git
+git clone git@github.com:a-wesole/VertexCP_2023_PbPb_D0_production.git VertexCompositeAnalysis
 
 scram b - j8
 

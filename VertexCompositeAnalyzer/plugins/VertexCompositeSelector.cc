@@ -55,7 +55,6 @@
 #include "TrackingTools/Records/interface/TransientTrackRecord.h"
 #include "TrackingTools/PatternTools/interface/ClosestApproachInRPhi.h"
 #include "TrackingTools/PatternTools/interface/TSCBLBuilderNoMaterial.h"
-#include "TrackingTools/PatternTools/interface/TwoTrackMinimumDistance.h"
 
 
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
@@ -156,7 +155,7 @@ public:
 class VertexCompositeSelector : public edm::stream::EDProducer<edm::GlobalCache<ONNXRuntime>>
 {
 	public:
-		explicit VertexCompositeSelector(const edm::ParameterSet &);
+		explicit VertexCompositeSelector(const edm::ParameterSet &, const ONNXRuntime *cache);
 		static std::unique_ptr<ONNXRuntime> initializeGlobalCache(const edm::ParameterSet &);
 		static void globalEndJob(const ONNXRuntime *);
 		~VertexCompositeSelector();
@@ -175,6 +174,7 @@ private:
 		ReadBDT *mva;
 		BDTHandler bdt;
 		std::vector<std::string> input_names_;
+    std::vector<std::string> output_names_;
 		std::vector<std::vector<int64_t>> input_shapes_;
 		FloatArrays data_; 
 		std::string onnxModelPath_;
@@ -214,6 +214,7 @@ private:
   double cand2DDCAMin_;
   double cand2DDCAMax_;
   double candVtxProbMin_;
+  double mvaCut_;
 
   // tree branches
   // event info
@@ -315,6 +316,7 @@ private:
 //then need to convert PAT candidates to reco candidates
   pat::CompositeCandidateCollection theGoodCandidates;
   MVACollection theMVANew;
+  MVACollection theMVANew_xg;
 };
 
 //
@@ -329,8 +331,8 @@ private:
 // constructors and destructor
 //
 
-VertexCompositeSelector::VertexCompositeSelector(const edm::ParameterSet &iConfig)
-	:bdt("VertexCP_2023_PbPb_D0_production/VertexCompositeAnalyzer/data/bdt_cuts.csv")
+VertexCompositeSelector::VertexCompositeSelector(const edm::ParameterSet &iConfig, const ONNXRuntime *cache)
+	:bdt("VertexCompositeAnalysis/VertexCompositeAnalyzer/data/bdt_cuts.csv")
 {
 	string a1 = "log3ddls";
 	string a2 = "nVtxProb";
@@ -396,6 +398,8 @@ VertexCompositeSelector::VertexCompositeSelector(const edm::ParameterSet &iConfi
   cand2DDCAMin_ = iConfig.getUntrackedParameter<double>("cand2DDCAMin");
   cand2DDCAMax_ = iConfig.getUntrackedParameter<double>("cand2DDCAMax");
   candVtxProbMin_ = iConfig.getUntrackedParameter<double>("candVtxProbMin");
+  mvaCut_ = iConfig.getParameter<double>(string("mvaCut"));
+
 
   // input tokens
   patCompositeCandidateCollection_Token_ = consumes<pat::CompositeCandidateCollection>(iConfig.getParameter<edm::InputTag>("D0")); 
@@ -521,10 +525,13 @@ void VertexCompositeSelector::produce(edm::Event &iEvent, const edm::EventSetup 
 if (useAnyMVA_) {
     
     auto mvas = std::make_unique<MVACollection>(theMVANew.begin(), theMVANew.end());
+    auto mvas_xg = std::make_unique<MVACollection>(theMVANew.begin(), theMVANew.end());
     
     iEvent.put(std::move(mvas), Form("MVAValuesNew%s", d0IDName_.c_str()));
+    iEvent.put(std::move(mvas_xg), Form("MVAValuesNew%s_xg", d0IDName_.c_str()));
     
     theMVANew.clear();
+    theMVANew_xg.clear();
 }
 
 
@@ -931,20 +938,6 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
     dzos2 = dzbest2 / dzerror2;
     dxyos2 = dxybest2 / dxyerror2;
 
-		// //trkDCA
-		// FreeTrajectoryState posState = dau1->impactPointTSCP().theState();
-		// FreeTrajectoryState negState = dau2->impactPointTSCP().theState();
-		// ClosestApproachInRPhi cApp;
-		// cApp.calculate(posStateNew, negStateNew);
-		// if( !cApp.status() ) continue;
-		// float dca = fabs( cApp.distance() );
-		// TwoTrackMinimumDistance minDistCalculator;
-		// minDistCalculator.calculate(posState, negState);
-		// dca = minDistCalculator.distance();
-		// cxPt = minDistCalculator.crossingPoint();
-		// GlobalError posErr = posStateNew.cartesianError().position();
-		// GlobalError negErr = negStateNew.cartesianError().position();
-
 
     mva_value = -999.9;
     if (useAnyMVA_)
@@ -952,6 +945,8 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
     cout << "*** it = " << it << " **" << endl;
 
 				 cms::Ort::FloatArrays data_;
+         data_.emplace_back(19, 0);
+         std::vector<float> &onnxVals_=data_[0];
 				 onnxVals_[0] = pt;
 				 onnxVals_[1] = y;
 				 onnxVals_[2] = vtxChi2;
@@ -959,7 +954,7 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
 				 onnxVals_[4] = agl;
 				 onnxVals_[5] = agl_abs;
 				 onnxVals_[6] = agl2D;
-				 onnxVals_[7] = agl2D_abs
+				 onnxVals_[7] = agl2D_abs;
 				 onnxVals_[8] = dl;
 				 onnxVals_[9] = dlos;
 				 onnxVals_[10] = dl2D;
@@ -970,8 +965,8 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
 				 onnxVals_[15] = eta2;
 				 onnxVals_[16] = ptErr1;
 				 onnxVals_[17] = ptErr2;
-				//  onnxVals_[18] = dca;
-				 std::vector<float> outputs = onnxRuntime_->run(input_names_, data_, input_shapes_,output_names_)[0];
+				 onnxVals_[18] = trk.userFloat("track3DDCA");
+				 std::vector<float> outputs = globalCache()->run(input_names_, data_, input_shapes_,output_names_)[0];
 				 float onnxVal = outputs[1];
 
 			inputValues.clear();
@@ -989,7 +984,7 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
 			inputValues.push_back(y);
 			mva_value = mva->GetMvaValue(inputValues);
 			bdt_cut_value = bdt.getBDTCut(y, centrality, pt);
-			if (mva_value <= bdt_cut_value ) continue;
+			if (mva_value <= bdt_cut_value || onnxVal <= mvaCut_) continue;
 			/*
 			   cout << "---------------------------" << endl;
 			   cout << "y && cent && pt = " << y << " && " << centrality << " && " << pt << endl;
@@ -999,6 +994,7 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
 			//if (bdt_cut_value < -1) continue;
 
 			theMVANew.push_back(mva_value);
+			theMVANew_xg.push_back(onnxVal);
 		//	mvaVals_.push_back(onnxVal);
 
 
@@ -1008,7 +1004,7 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
 
 
 		// select MVA value
-		theVertexComps.push_back(trk);
+		theGoodCandidates.push_back(trk);
 	}
 }
 

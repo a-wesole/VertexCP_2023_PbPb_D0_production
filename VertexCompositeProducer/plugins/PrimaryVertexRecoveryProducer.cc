@@ -1,4 +1,4 @@
-#include "VertexCP_2023_PbPb_D0_production/VertexCompositeProducer/interface/PrimaryVertexRecoveryProducer.h"
+#include "VertexCompositeAnalysis/VertexCompositeProducer/interface/PrimaryVertexRecoveryProducer.h"
 
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/VertexReco/interface/VertexFwd.h"

@@ -20,6 +20,8 @@
 #include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
 #include "TrackingTools/Records/interface/TransientTrackRecord.h"
 #include "TrackingTools/PatternTools/interface/ClosestApproachInRPhi.h"
+#include "TrackingTools/PatternTools/interface/TwoTrackMinimumDistance.h"
+
 #include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "TrackingTools/TrajectoryState/interface/TrajectoryStateTransform.h"
@@ -470,9 +472,28 @@ void D0Fitter::fitAll(const edm::Event &iEvent, const edm::EventSetup &iSetup)
         GlobalPoint vertexPosition = RecoVertex::convertPos(vtxPrimary->position());
         GlobalError vertexPositionErr = RecoVertex::convertError(vtxPrimary->error());
         cur3DIP = (a3d.distance(VertexState(vertexPosition, vertexPositionErr), VertexState(refPoint, refPointErr)));
+        // Two trkDCA
+        FreeTrajectoryState posStateNew = posTransTkPtr->impactPointTSCP().theState();
+        FreeTrajectoryState negStateNew = negTransTkPtr->impactPointTSCP().theState();
+		    ClosestApproachInRPhi cApp;
+		    cApp.calculate(posStateNew, negStateNew);
+		    if( !cApp.status() ) continue;
+		    float dca = fabs( cApp.distance() );
+		    TwoTrackMinimumDistance minDistCalculator;
+		    minDistCalculator.calculate(posState, negState);
+		    dca = minDistCalculator.distance();
+		    cxPt = minDistCalculator.crossingPoint();
+		    GlobalError posErr = posStateNew.cartesianError().position();
+		    GlobalError negErr = negStateNew.cartesianError().position();
 
-        pat::CompositeCandidate *theD0 = 0;
-        theD0 = new pat::CompositeCandidate();
+        // DCA error propagation
+        double sigma_x2 = posErr.cxx() + negErr.cxx();
+        double sigma_y2 = posErr.cyy() + negErr.cyy();
+
+        double dcaError = sqrt(sigma_x2 * cxPt.x() * cxPt.x() + 
+        sigma_y2 * cxPt.y() * cxPt.y()) / dca;
+
+        std::unique_ptr<pat::CompositeCandidate> theD0 = std::make_unique<pat::CompositeCandidate>();
         theD0->setP4(d0P4);
 
         RecoChargedCandidate
@@ -492,6 +513,8 @@ void D0Fitter::fitAll(const edm::Event &iEvent, const edm::EventSetup &iSetup)
         AddFourMomenta addp4;
         theD0->addDaughter(thePosCand, "posdau");
         theD0->addDaughter(theNegCand, "negdau");
+        theD0->addUserFloat("track3DDCA", dca);
+        theD0->addUserFloat("track3DDCAErr", dcaError);
         theD0->setPdgId(pdg_id[i]);
         /*
         theD0->addUserFloat("alpha2D", d0Angle2D );
@@ -525,9 +548,6 @@ void D0Fitter::fitAll(const edm::Event &iEvent, const edm::EventSetup &iSetup)
         {
           theD0s.push_back(*theD0);
         }
-
-        if (theD0)
-          delete theD0;
       }
     }
   }

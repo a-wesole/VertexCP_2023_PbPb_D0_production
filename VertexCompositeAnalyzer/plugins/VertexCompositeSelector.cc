@@ -578,7 +578,7 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
   //for(unsigned it = 0; it < 10; ++it)
   {
 
-    cout << "*** it = " << it << " **" << endl;
+    //cout << "*** it = " << it << " **" << endl;
     const pat::CompositeCandidate &trk = (*d0candidates_)[it];
 
     double bdt_cut_value = -999.9;
@@ -667,9 +667,11 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
     TVector3 ptosvec(secvx - bestvx, secvy - bestvy, secvz - bestvz);
     TVector3 secvec(px, py, pz);
 
+    /*
     cout << "bestvx = " << bestvx << " bestvy = " << bestvy << " bestvz = " << bestvz << endl;
     cout << "secvx = " << secvx << " secvy = " << secvy << " secvz = " << secvz << endl;
     cout << "px = " << px << " py = " << py << " pz = " << pz << endl;
+    */
 
 
     TVector3 ptosvec2D(secvx - bestvx, secvy - bestvy, 0);
@@ -709,8 +711,10 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
     dlerror = sqrt(ROOT::Math::Similarity(totalCov, distanceVector)) / dl;
 
     dlos = dl / dlerror;
+    /*
     cout << "dl = " << dl << " dlerror = " << dlerror << endl;
     cout << "dlos = " << dlos << endl;
+    */
     if (dlos < cand3DDecayLengthSigMin_ || dlos > 1000.)
       continue;
     //cout << "cut 14 " << endl;
@@ -889,8 +893,6 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
     mva_value = -999.9;
     if (useAnyMVA_)
     {
-    cout << "*** it = " << it << " **" << endl;
-
       inputValues.clear();
       inputValues.push_back(log10(dlos)); // 00
       inputValues.push_back(VtxProb);     // 01
@@ -922,9 +924,11 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
     // select MVA value
     theGoodCandidates.push_back(trk);
   }
+  /*
   cout << "theMVANew.size() = " << theMVANew.size() << endl;
   cout << "theGoodCandidates.size() = " << theGoodCandidates.size() << endl;
   cout << "-----------------------------" << endl;
+  */
 }
 
 // ------------ method called once each job just before starting event

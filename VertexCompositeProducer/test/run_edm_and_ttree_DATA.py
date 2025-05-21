@@ -111,6 +111,7 @@ process.load("VertexCompositeAnalysis.VertexCompositeAnalyzer.eventinfotree_cff"
 
 
 process.d0selectorNewReduced = process.d0selector.clone()
+process.d0selectorNewReduced.D0 = cms.InputTag("generalD0CandidatesNew:D0")
 process.d0selectorNewReduced.DCAValCollection = cms.InputTag("generalD0CandidatesNew:DCAValuesD0")
 process.d0selectorNewReduced.DCAErrCollection = cms.InputTag("generalD0CandidatesNew:DCAErrorsD0")
 process.d0selectorNewReduced.cand3DDecayLengthSigMin = cms.untracked.double(0.)
@@ -121,7 +122,7 @@ process.d0selectorNewReduced.useAnyMVA = cms.bool(True); #only set true if you a
 
 process.d0ana_newreduced = process.d0ana.clone()
 #process.d0ana_newreduced.VertexCompositeCollection = cms.untracked.InputTag("d0selectorNewReduced:D0")
-process.d0ana_newreduced.patCompositeCandidates = cms.untracked.InputTag("d0selectorNewReduced:D0")
+process.d0ana_newreduced.D0 = cms.untracked.InputTag("d0selectorNewReduced:D0")
 process.d0ana_newreduced.DCAValCollection = cms.InputTag("d0selectorNewReduced:DCAValuesNewD0")
 process.d0ana_newreduced.DCAErrCollection = cms.InputTag("d0selectorNewReduced:DCAErrorsNewD0")
 process.d0ana_newreduced.isCentrality = cms.bool(True) # Centrality 

@@ -25,13 +25,19 @@ cmsrel CMSSW_13_2_11
 cd CMSSW_13_2_11/src
 cmsenv
 
-git clone --recurse-submodules git@github.com:a-wesole/VertexCP_2023_PbPb_D0_production.git VertexCompositeAnalysis
+#clone the repo
+git clone git@github.com:a-wesole/VertexCP_2023_PbPb_D0_production.git VertexCompositeAnalysis
 
+#run the setup.sh script this will add the HeavyIonsAnalysis from CmsHI github that is needed for centrality 
+cd VertexCompositeAnalysis
+./setup.sh
 
-scram b - j8
+#compile
+cd ..
+scram b -j8
 
+#cd and run code that produces edm and TTree files 
 cd VertexCompositeAnalysis/VertexCompositeProducer/test
-
 cmsRun run_edm_and_ttree_DATA.py 
 
 

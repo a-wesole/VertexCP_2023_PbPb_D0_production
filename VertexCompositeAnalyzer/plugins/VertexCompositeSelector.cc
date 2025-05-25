@@ -176,7 +176,7 @@ private:
 		std::vector<std::string> input_names_;
     std::vector<std::string> output_names_;
 		std::vector<std::vector<int64_t>> input_shapes_;
-		FloatArrays data_; 
+		// FloatArrays data_; 
 		std::string onnxModelPath_;
 
   // ----------member data ---------------------------
@@ -332,7 +332,7 @@ private:
 //
 
 VertexCompositeSelector::VertexCompositeSelector(const edm::ParameterSet &iConfig, const ONNXRuntime *cache)
-	:bdt("VertexCompositeAnalysis/VertexCompositeAnalyzer/data/bdt_cuts.csv")
+	:bdt("/u/user/jun502s/dstarana/test/CMSSW_13_2_10/src/VertexCompositeAnalysis/VertexCompositeAnalyzer/data/bdt_cuts.csv")
 {
 	string a1 = "log3ddls";
 	string a2 = "nVtxProb";
@@ -449,6 +449,8 @@ VertexCompositeSelector::VertexCompositeSelector(const edm::ParameterSet &iConfi
 
   produces<pat::CompositeCandidateCollection>(d0IDName_);
   produces<MVACollection>(Form("MVAValuesNew%s", d0IDName_.c_str()));
+  //produces<pat::CompositeCandidateCollection>(d0IDName_);
+  produces<MVACollection>(Form("MVAValuesNew%s2", d0IDName_.c_str()));
 
   isPionD1 = true;
   isPionD2 = true;
@@ -465,6 +467,7 @@ std::unique_ptr<ONNXRuntime> VertexCompositeSelector::initializeGlobalCache(cons
 
      edm::FileInPath fip(Form("VertexCompositeAnalysis/VertexCompositeProducer/data/%s", onnxModelPath.c_str()));
      std::string fullPath = fip.fullPath();
+     std::cout << fullPath << std::endl;
 
      std::ifstream testFile(fullPath);
      if (!testFile.good()) {
@@ -528,7 +531,7 @@ if (useAnyMVA_) {
     auto mvas_xg = std::make_unique<MVACollection>(theMVANew.begin(), theMVANew.end());
     
     iEvent.put(std::move(mvas), Form("MVAValuesNew%s", d0IDName_.c_str()));
-    iEvent.put(std::move(mvas_xg), Form("MVAValuesNew%s_xg", d0IDName_.c_str()));
+    iEvent.put(std::move(mvas_xg), Form("MVAValuesNew%s2", d0IDName_.c_str()));
     
     theMVANew.clear();
     theMVANew_xg.clear();

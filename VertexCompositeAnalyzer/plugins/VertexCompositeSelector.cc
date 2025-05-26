@@ -178,6 +178,7 @@ private:
 		std::vector<std::vector<int64_t>> input_shapes_;
 		// FloatArrays data_; 
 		std::string onnxModelPath_;
+        const ONNXRuntime* onnxRuntime_ ;
 
   // ----------member data ---------------------------
 
@@ -332,7 +333,7 @@ private:
 //
 
 VertexCompositeSelector::VertexCompositeSelector(const edm::ParameterSet &iConfig, const ONNXRuntime *cache)
-	:bdt("/u/user/jun502s/dstarana/test/CMSSW_13_2_10/src/VertexCompositeAnalysis/VertexCompositeAnalyzer/data/bdt_cuts.csv")
+	:bdt("/u/user/jun502s/dstarana/test/CMSSW_13_2_10/src/VertexCompositeAnalysis/VertexCompositeAnalyzer/data/bdt_cuts.csv"), input_shapes_(), onnxRuntime_(cache)
 {
 	string a1 = "log3ddls";
 	string a2 = "nVtxProb";
@@ -420,15 +421,7 @@ VertexCompositeSelector::VertexCompositeSelector(const edm::ParameterSet &iConfi
   // Loading TMVA
   useAnyMVA_ = false;
 
-	  if (useAnyMVA_) {
-    	if (iConfig.exists("input_names")||iConfig.exists("output_names")) {
-    	  input_names_ = iConfig.getParameter<std::vector<std::string>>("input_names");
-    	  output_names_ = iConfig.getParameter<std::vector<std::string>>("output_names");
-    	} else {
-    	  throw cms::Exception("Configuration") << "onnxModelName not provided in ParameterSet";
-    	}
-	  }
- 	
+
 
 
   isCentrality_ = false;
@@ -443,6 +436,15 @@ VertexCompositeSelector::VertexCompositeSelector(const edm::ParameterSet &iConfi
   if (iConfig.exists("useAnyMVA"))
     useAnyMVA_ = iConfig.getParameter<bool>("useAnyMVA");
 
+	  if (useAnyMVA_) {
+    	if (iConfig.exists("input_names")||iConfig.exists("output_names")) {
+    	  input_names_ = iConfig.getParameter<std::vector<std::string>>("input_names");
+    	  output_names_ = iConfig.getParameter<std::vector<std::string>>("output_names");
+    	} else {
+    	  throw cms::Exception("Configuration") << "onnxModelName not provided in ParameterSet";
+    	}
+	  }
+ 	
 
 
   d0IDName_ = (iConfig.getUntrackedParameter<edm::InputTag>("VertexCompositeCollection")).instance();
@@ -634,7 +636,7 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
   //for(unsigned it = 0; it < 10; ++it)
   {
 
-    cout << "*** it = " << it << " **" << endl;
+    //cout << "*** it = " << it << " **" << endl;
     const pat::CompositeCandidate &trk = (*d0candidates_)[it];
 
     double bdt_cut_value = -999.9;
@@ -723,9 +725,9 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
     TVector3 ptosvec(secvx - bestvx, secvy - bestvy, secvz - bestvz);
     TVector3 secvec(px, py, pz);
 
-    cout << "bestvx = " << bestvx << " bestvy = " << bestvy << " bestvz = " << bestvz << endl;
-    cout << "secvx = " << secvx << " secvy = " << secvy << " secvz = " << secvz << endl;
-    cout << "px = " << px << " py = " << py << " pz = " << pz << endl;
+    //cout << "bestvx = " << bestvx << " bestvy = " << bestvy << " bestvz = " << bestvz << endl;
+    //cout << "secvx = " << secvx << " secvy = " << secvy << " secvz = " << secvz << endl;
+    //cout << "px = " << px << " py = " << py << " pz = " << pz << endl;
 
 
     TVector3 ptosvec2D(secvx - bestvx, secvy - bestvy, 0);
@@ -765,8 +767,8 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
     dlerror = sqrt(ROOT::Math::Similarity(totalCov, distanceVector)) / dl;
 
     dlos = dl / dlerror;
-    cout << "dl = " << dl << " dlerror = " << dlerror << endl;
-    cout << "dlos = " << dlos << endl;
+    //cout << "dl = " << dl << " dlerror = " << dlerror << endl;
+    //cout << "dlos = " << dlos << endl;
     if (dlos < cand3DDecayLengthSigMin_ || dlos > 1000.)
       continue;
     //cout << "cut 14 " << endl;
@@ -943,11 +945,11 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
 
 
     mva_value = -999.9;
-    if (useAnyMVA_)
+    if (useAnyMVA_ && onnxRuntime_)
     {
-    cout << "*** it = " << it << " **" << endl;
+    //cout << "*** it = " << it << " **" << endl;
 
-				 cms::Ort::FloatArrays data_;
+		 cms::Ort::FloatArrays data_;
          data_.emplace_back(19, 0);
          std::vector<float> &onnxVals_=data_[0];
 				 onnxVals_[0] = pt;
@@ -969,7 +971,8 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
 				 onnxVals_[16] = ptErr1;
 				 onnxVals_[17] = ptErr2;
 				 onnxVals_[18] = trk.userFloat("track3DDCA");
-				 std::vector<float> outputs = globalCache()->run(input_names_, data_, input_shapes_,output_names_)[0];
+
+				 std::vector<float> outputs = onnxRuntime_->run(input_names_, data_, input_shapes_,output_names_)[0];
 				 float onnxVal = outputs[1];
 
 			inputValues.clear();

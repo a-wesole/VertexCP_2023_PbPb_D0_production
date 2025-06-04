@@ -23,10 +23,10 @@ process.HiForestInfo.info = cms.vstring("HiForest, miniAOD, 132X, mc")
 
 # Limit the output messages
 process.load('FWCore.MessageService.MessageLogger_cfi')
-process.MessageLogger.cerr.FwkReport.reportEvery = 10000
+process.MessageLogger.cerr.FwkReport.reportEvery = 10
 process.options = cms.untracked.PSet(wantSummary = cms.untracked.bool(True))
 
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32((-1))) 
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32((1000))) 
 process.TFileService = cms.Service("TFileService",
     fileName =cms.string('TTree.root'))
 
@@ -119,48 +119,34 @@ process.load("VertexCompositeAnalysis.VertexCompositeAnalyzer.eventinfotree_cff"
 
 
 process.d0selectorNewReduced = process.d0selector.clone()
+process.d0selectorNewReduced.D0 = cms.InputTag("generalD0CandidatesNew:D0")
 process.d0selectorNewReduced.DCAValCollection = cms.InputTag("generalD0CandidatesNew:DCAValuesD0")
 process.d0selectorNewReduced.DCAErrCollection = cms.InputTag("generalD0CandidatesNew:DCAErrorsD0")
 process.d0selectorNewReduced.cand3DDecayLengthSigMin = cms.untracked.double(0.)
 process.d0selectorNewReduced.cand3DPointingAngleMax = cms.untracked.double(1.0)
 process.d0selectorNewReduced.trkNHitMin = cms.untracked.int32(11)
+process.d0selectorNewReduced.isCentrality = cms.bool(True) # Centrality 
+process.d0selectorNewReduced.useAnyMVA = cms.bool(True); #
 
 
 process.d0ana_newreduced = process.d0ana.clone()
-process.d0ana_newreduced.VertexCompositeCollection = cms.untracked.InputTag("d0selectorNewReduced:D0")
+process.d0ana_newreduced.D0 = cms.untracked.InputTag("d0selectorNewReduced:D0")
 process.d0ana_newreduced.DCAValCollection = cms.InputTag("d0selectorNewReduced:DCAValuesNewD0")
 process.d0ana_newreduced.DCAErrCollection = cms.InputTag("d0selectorNewReduced:DCAErrorsNewD0")
 process.d0ana_newreduced.isCentrality = cms.bool(True) # Centrality 
 process.d0ana_newreduced.centralityBinLabel = cms.InputTag("centralityBin", "HFtowers")#centrality
 process.d0ana_newreduced.centralitySrc = cms.InputTag("hiCentrality") #central
-process.d0ana_newreduced.doGenNtuple = cms.untracked.bool(True) #MConly
-process.d0ana_newreduced.doGenMatching = cms.untracked.bool(True) #MConly
+process.d0ana_newreduced.doGenNtuple = cms.untracked.bool(False) #MConly
+process.d0ana_newreduced.doGenMatching = cms.untracked.bool(False) #MConly
+process.d0ana_newreduced.useAnyMVA = cms.bool(True); #only set true if you are assigning BDT values +++ change  
+process.d0ana_newreduced.MVACollection = cms.InputTag("d0selectorNewReduced:MVAValuesNewD0:ANASKIM")
+
 
 process.d0ana_seq2 = cms.Sequence(process.d0selectorNewReduced * process.d0ana_newreduced)
 
 #eventinfoana must be in EndPath, and process.eventinfoana.selectEvents must be the name of eventFilter_HM Path
 process.eventinfoana.selectEvents = cms.untracked.string('EventSelections')
 process.eventinfoana.stageL1Trigger = cms.uint32(2)
-'''
-process.eventinfoana.selectEvents = cms.untracked.string('eventFilter_HLT')
-process.eventinfoana.triggerPathNames = cms.untracked.vstring(
-        "HLT_HIMinimumBiasi*", #26
-        )
-process.eventinfoana.eventFilterNames = cms.untracked.vstring(
-        'Flag_colEvtSel',
-        'Flag_hfCoincFilter',
-        'Flag_primaryVertexFilter',
-        )
-process.eventinfoana.triggerFilterNames = cms.untracked.vstring()
-process.eventinfoana.stageL1Trigger = cms.uint32(2)
-'''
-#process.pevt = cms.Path(process.centralityBin * process.eventFilter_HLT * process.event_filters * process.eventinfoana)
-'''
-# Define the process schedule
-process.EventSelections = cms.Path(process.centralityBin * process.eventFilter_HLT * process.event_filters * process.generalD0CandidatesNew * process.d0ana_seq2 * process.eventinfoana)
-process.schedule = cms.Schedule(process.EventSelections)
-'''
-
 process.EventSelections = cms.Path(
     process.centralityBin *
     #process.eventFilter_HLT *
@@ -169,10 +155,7 @@ process.EventSelections = cms.Path(
     process.d0ana_seq2 
 )
 
-
 process.EventInfoAnalysis = cms.EndPath(process.eventinfoana)
-
-# Update the process schedule
 process.schedule = cms.Schedule(process.EventSelections, process.EventInfoAnalysis)
 
 
@@ -184,8 +167,7 @@ process.output = cms.OutputModule("PoolOutputModule",
     fileName = cms.untracked.string('edm.root'),
         outputCommands = cms.untracked.vstring( #which data to include and exclude 
         "drop *", #no data is kept unless explicitly specified
-        'keep recoVertexCompositeCandidates_d0selectorNewReduced_D0_*',  # Keep the first collection
-        'keep recoVertexCompositeCandidates_generalD0CandidatesNew_D0_*' 
+        'keep *_d0selectorNewReduced_*_*',  # Keep the first collection
         )
 )
 

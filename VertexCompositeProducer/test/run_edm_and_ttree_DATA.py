@@ -147,10 +147,6 @@ process.EventSelections = cms.Path(
     process.generalD0CandidatesNew *
     process.d0ana_seq2 
 )
-process.Analysis = cms.Path(
-    process.generalD0CandidatesNew *
-    process.d0ana_seq2 
-)
 
 process.EventInfoAnalysis = cms.EndPath(process.eventinfoana)
 process.schedule = cms.Schedule(process.EventSelections, process.EventInfoAnalysis)

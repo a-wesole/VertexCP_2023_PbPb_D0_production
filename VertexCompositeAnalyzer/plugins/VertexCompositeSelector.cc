@@ -318,7 +318,7 @@ private:
 //
 
 VertexCompositeSelector::VertexCompositeSelector(const edm::ParameterSet &iConfig)
-  :bdt("/home/awesole/VertexCP_up/CMSSW_13_2_11/src/VertexCompositeAnalysis/VertexCompositeAnalyzer/plugins/bdt_cuts.csv")
+  :bdt("/home/awesole/VertexCP_up/CMSSW_13_2_11/src/VertexCompositeAnalysis/VertexCompositeAnalyzer/data/bdt_cuts.csv")
 {
   string a1 = "log3ddls";
   string a2 = "nVtxProb";

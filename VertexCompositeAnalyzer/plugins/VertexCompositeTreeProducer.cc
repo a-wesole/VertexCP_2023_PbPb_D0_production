@@ -142,6 +142,7 @@ class VertexCompositeTreeProducer : public edm::one::EDAnalyzer<> {
 
 		//Composite candidate info
 		float mva[MAXCAN];
+		float mva_xg[MAXCAN];
 		float pt[MAXCAN];
 		float eta[MAXCAN];
 		float phi[MAXCAN];
@@ -234,6 +235,7 @@ class VertexCompositeTreeProducer : public edm::one::EDAnalyzer<> {
 		edm::EDGetTokenT<pat::CompositeCandidateCollection> patCompositeCandidateCollection_Token_;
 
 		edm::EDGetTokenT<MVACollection> MVAValues_Token_;
+		edm::EDGetTokenT<MVACollection> MVAValues_Token_2;
 
 		edm::EDGetTokenT<edm::ValueMap<reco::DeDxData> > Dedx_Token1_;
 		edm::EDGetTokenT<edm::ValueMap<reco::DeDxData> > Dedx_Token2_;
@@ -291,8 +293,10 @@ VertexCompositeTreeProducer::VertexCompositeTreeProducer(const edm::ParameterSet
 	}
 
 
-	if(useAnyMVA_ && iConfig.exists("MVACollection"))
+	if(useAnyMVA_ && iConfig.exists("MVACollection") && iConfig.exists("MVACollection2")) {
 		MVAValues_Token_ = consumes<MVACollection>(iConfig.getParameter<edm::InputTag>("MVACollection"));
+	MVAValues_Token_2 = consumes<MVACollection>(iConfig.getParameter<edm::InputTag>("MVACollection2"));
+	}
 }
 
 
@@ -346,10 +350,13 @@ VertexCompositeTreeProducer::fillRECO(const edm::Event& iEvent, const edm::Event
 	const  pat::CompositeCandidateCollection* v0candidates_ = v0candidates.product();
 
 	edm::Handle<MVACollection> mvavalues;
+	edm::Handle<MVACollection> mvavalues_xg;
 	if(useAnyMVA_)
 	{
 		iEvent.getByToken(MVAValues_Token_,mvavalues);
-		assert( (*mvavalues).size() == v0candidates->size() );
+		iEvent.getByToken(MVAValues_Token_2,mvavalues_xg);
+		assert( (*mvavalues).size() == v0candidates->size() ); 
+		assert( (*mvavalues_xg).size() == v0candidates->size() );
 	}
 
 	edm::Handle<reco::GenParticleCollection> genpars;
@@ -485,7 +492,9 @@ VertexCompositeTreeProducer::fillRECO(const edm::Event& iEvent, const edm::Event
 		flavor[it] = trk.pdgId()/abs(trk.pdgId());
 
 		mva[it] = 0.0;
-		if(useAnyMVA_) mva[it] = (*mvavalues)[it];
+		if(useAnyMVA_){ mva[it] = (*mvavalues)[it];
+			mva_xg[it] = (*mvavalues_xg)[it]; //xgboost
+		}
 
 		double px = trk.px();
 		double py = trk.py();
@@ -856,7 +865,8 @@ VertexCompositeTreeProducer::initTree()
 		VertexCompositeNtuple->Branch("y",&y,"y[candSize]/F");
 		VertexCompositeNtuple->Branch("phi",&phi,"phi[candSize]/F");
 		VertexCompositeNtuple->Branch("mass",&mass,"mass[candSize]/F");
-		if(useAnyMVA_) VertexCompositeNtuple->Branch("mva",&mva,"mva[candSize]/F");
+		if(useAnyMVA_){ VertexCompositeNtuple->Branch("mva",&mva,"mva[candSize]/F");
+			VertexCompositeNtuple->Branch("mva_xg",&mva_xg,"mva_xg[candSize]/F");}
 
 		if(!isSkimMVA_)  
 		{

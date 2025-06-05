@@ -26,5 +26,7 @@
 <use name="DataFormats/HLTReco"/>
 <use name="HLTrigger/HLTcore"/>
 <use name="CondFormats/GBRForest"/>
+<use name="PhysicsTools/ONNXRuntime" />
+
 
 <flags EDM_PLUGIN="1"/>

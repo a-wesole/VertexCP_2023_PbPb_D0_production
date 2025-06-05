@@ -318,7 +318,7 @@ private:
 //
 
 VertexCompositeSelector::VertexCompositeSelector(const edm::ParameterSet &iConfig)
-  :bdt("/home/awesole/VertexCP_up/CMSSW_13_2_11/src/VertexCompositeAnalysis/VertexCompositeAnalyzer/data/bdt_cuts.csv")
+  :bdt("../../VertexCompositeAnalyzer/data/bdt_cuts.csv")
 {
   string a1 = "log3ddls";
   string a2 = "nVtxProb";
@@ -908,13 +908,13 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
       inputValues.push_back(y);
       mva_value = mva->GetMvaValue(inputValues);
       bdt_cut_value = bdt.getBDTCut(y, centrality, pt);
-      //if (mva_value <= bdt_cut_value ) continue;
+      if (mva_value <= bdt_cut_value ) continue;
       //cout << "---------------------------" << endl;
       //cout << "y && cent && pt = " << y << " && " << centrality << " && " << pt << endl;
       //cout << "bdt_weight = " << mva_value << endl;
       //cout << "bdt_cut_value = " << bdt_cut_value << endl;
       //if (mva_value < -1) continue;
-      if (bdt_cut_value < -10000) continue;
+      //if (bdt_cut_value < -10000) continue;
 
       theMVANew.push_back(mva_value);
 

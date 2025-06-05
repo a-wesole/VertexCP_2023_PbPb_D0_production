@@ -79,11 +79,9 @@
 const int y_bins = 2;
 const int cent_bins = 4;
 const int pT_bins = 10;
-<<<<<<< HEAD
-=======
+
 using namespace std;
 using namespace cms::Ort;
->>>>>>> XGBoost
 
 using namespace std;
 
@@ -157,17 +155,12 @@ public:
 
 class VertexCompositeSelector : public edm::stream::EDProducer<edm::GlobalCache<ONNXRuntime>>
 {
-<<<<<<< HEAD
-public:
-  explicit VertexCompositeSelector(const edm::ParameterSet &);
-  ~VertexCompositeSelector();
-=======
+
 	public:
 		explicit VertexCompositeSelector(const edm::ParameterSet &, const ONNXRuntime *cache);
 		static std::unique_ptr<ONNXRuntime> initializeGlobalCache(const edm::ParameterSet &);
 		static void globalEndJob(const ONNXRuntime *);
 		~VertexCompositeSelector();
->>>>>>> XGBoost
 
 
   using MVACollection = std::vector<float>;
@@ -178,12 +171,7 @@ private:
   void fillRECO(edm::Event &iEvent, const edm::EventSetup &iSetup);
   virtual void endJob();
 
-<<<<<<< HEAD
-  std::vector<std::string> theInputVars;
-  vector<double> inputValues;
-  ReadBDT *mva;
-  BDTHandler bdt;
-=======
+
 		std::vector<std::string> theInputVars;
 		vector<double> inputValues;
 		ReadBDT *mva;
@@ -194,7 +182,6 @@ private:
 		// FloatArrays data_; 
 		std::string onnxModelPath_;
         const ONNXRuntime* onnxRuntime_ ;
->>>>>>> XGBoost
 
   // ----------member data ---------------------------
 
@@ -231,10 +218,8 @@ private:
   double cand2DDCAMin_;
   double cand2DDCAMax_;
   double candVtxProbMin_;
-<<<<<<< HEAD
-=======
+
   double mvaCut_;
->>>>>>> XGBoost
 
   // tree branches
   // event info
@@ -336,10 +321,7 @@ private:
 //then need to convert PAT candidates to reco candidates
   pat::CompositeCandidateCollection theGoodCandidates;
   MVACollection theMVANew;
-<<<<<<< HEAD
-=======
   MVACollection theMVANew_xg;
->>>>>>> XGBoost
 };
 
 //
@@ -354,25 +336,8 @@ private:
 // constructors and destructor
 //
 
-<<<<<<< HEAD
-VertexCompositeSelector::VertexCompositeSelector(const edm::ParameterSet &iConfig)
-  :bdt("../../VertexCompositeAnalyzer/data/bdt_cuts.csv")
-{
-  string a1 = "log3ddls";
-  string a2 = "nVtxProb";
-  string a3 = "n3DPointingAngle";
-  string a4 = "nDtrk1Pt";
-  string a5 = "nDtrk2Pt";
-  string a6 = "nxyDCASigD1";
-  string a7 = "nxyDCASigD2";
-  string a8 = "nzDCASigD1";
-  string a9 = "nzDCASigD2";
-  string a10 = "npT";
-  string a11="ny";
-  string a12="ncent";
-=======
 VertexCompositeSelector::VertexCompositeSelector(const edm::ParameterSet &iConfig, const ONNXRuntime *cache)
-	:bdt("/eos/home-j/junseok/analysis/D0study/test/CMSSW_13_2_11/src/VertexCompositeAnalysis/VertexCompositeAnalyzer/data/bdt_cuts.csv"), input_shapes_(), onnxRuntime_(cache)
+	:bdt("../../VertexCompositeAnalyzer/data/bdt_cuts.csv"), input_shapes_(), onnxRuntime_(cache)
 {
 	string a1 = "log3ddls";
 	string a2 = "nVtxProb";
@@ -386,7 +351,6 @@ VertexCompositeSelector::VertexCompositeSelector(const edm::ParameterSet &iConfi
 	string a10 = "npT";
 	string a11 =  "ny";
 	string a12 = "ncent";
->>>>>>> XGBoost
 
   theInputVars.push_back(a1);
   theInputVars.push_back(a2);
@@ -439,43 +403,6 @@ VertexCompositeSelector::VertexCompositeSelector(const edm::ParameterSet &iConfi
   cand2DDCAMin_ = iConfig.getUntrackedParameter<double>("cand2DDCAMin");
   cand2DDCAMax_ = iConfig.getUntrackedParameter<double>("cand2DDCAMax");
   candVtxProbMin_ = iConfig.getUntrackedParameter<double>("candVtxProbMin");
-<<<<<<< HEAD
-
-  // input tokens
-  patCompositeCandidateCollection_Token_ = consumes<pat::CompositeCandidateCollection>(iConfig.getParameter<edm::InputTag>("D0")); 
-  tok_offlinePV_ = consumes<reco::VertexCollection>(iConfig.getUntrackedParameter<edm::InputTag>("VertexCollection"));
-  tok_generalTrk_ = consumes<reco::TrackCollection>(iConfig.getUntrackedParameter<edm::InputTag>("TrackCollection"));
-  //abby
-  Dedx_Token1_ = consumes<edm::ValueMap<reco::DeDxData>>(edm::InputTag("dedxHarmonic2"));
-  Dedx_Token2_ = consumes<edm::ValueMap<reco::DeDxData>>(edm::InputTag("dedxTruncated40"));
-  tok_genParticle_ = consumes<reco::GenParticleCollection>(edm::InputTag(iConfig.getUntrackedParameter<edm::InputTag>("GenParticleCollection")));
-
-  usePID_ = false;
-  selectFlavor_ = 0;
-  if (iConfig.exists("usePID"))
-    usePID_ = iConfig.getParameter<bool>("usePID");
-  if (iConfig.exists("useFlavor"))
-    selectFlavor_ = iConfig.getUntrackedParameter<int>("selectFlavor");
-
-  // Loading TMVA
-  useAnyMVA_ = false;
-
-
-  isCentrality_ = false;
-  if (iConfig.exists("isCentrality"))
-    isCentrality_ = iConfig.getParameter<bool>("isCentrality");
-  if (isCentrality_)
-  {
-    tok_centBinLabel_ = consumes<int>(iConfig.getParameter<edm::InputTag>("centralityBinLabel"));
-    tok_centSrc_ = consumes<reco::Centrality>(iConfig.getParameter<edm::InputTag>("centralitySrc"));
-  }
-
-  if (iConfig.exists("useAnyMVA"))
-    useAnyMVA_ = iConfig.getParameter<bool>("useAnyMVA");
-
-
-
-=======
   mvaCut_ = iConfig.getParameter<double>(string("mvaCut"));
 
 
@@ -524,16 +451,13 @@ VertexCompositeSelector::VertexCompositeSelector(const edm::ParameterSet &iConfi
  	
 
 
->>>>>>> XGBoost
   d0IDName_ = (iConfig.getUntrackedParameter<edm::InputTag>("VertexCompositeCollection")).instance();
 
   produces<pat::CompositeCandidateCollection>(d0IDName_);
   produces<MVACollection>(Form("MVAValuesNew%s", d0IDName_.c_str()));
-<<<<<<< HEAD
-=======
+
   //produces<pat::CompositeCandidateCollection>(d0IDName_);
   produces<MVACollection>(Form("MVAValuesNew%s2", d0IDName_.c_str()));
->>>>>>> XGBoost
 
   isPionD1 = true;
   isPionD2 = true;
@@ -611,12 +535,6 @@ void VertexCompositeSelector::produce(edm::Event &iEvent, const edm::EventSetup 
 if (useAnyMVA_) {
     
     auto mvas = std::make_unique<MVACollection>(theMVANew.begin(), theMVANew.end());
-<<<<<<< HEAD
-    
-    iEvent.put(std::move(mvas), Form("MVAValuesNew%s", d0IDName_.c_str()));
-    
-    theMVANew.clear();
-=======
     auto mvas_xg = std::make_unique<MVACollection>(theMVANew_xg.begin(), theMVANew_xg.end());
     
     iEvent.put(std::move(mvas), Form("MVAValuesNew%s", d0IDName_.c_str()));
@@ -624,7 +542,6 @@ if (useAnyMVA_) {
     
     theMVANew.clear();
     theMVANew_xg.clear();
->>>>>>> XGBoost
 }
 
 
@@ -813,17 +730,10 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
     TVector3 ptosvec(secvx - bestvx, secvy - bestvy, secvz - bestvz);
     TVector3 secvec(px, py, pz);
 
-<<<<<<< HEAD
-    /*
-    cout << "bestvx = " << bestvx << " bestvy = " << bestvy << " bestvz = " << bestvz << endl;
-    cout << "secvx = " << secvx << " secvy = " << secvy << " secvz = " << secvz << endl;
-    cout << "px = " << px << " py = " << py << " pz = " << pz << endl;
-    */
-=======
+
     //cout << "bestvx = " << bestvx << " bestvy = " << bestvy << " bestvz = " << bestvz << endl;
     //cout << "secvx = " << secvx << " secvy = " << secvy << " secvz = " << secvz << endl;
     //cout << "px = " << px << " py = " << py << " pz = " << pz << endl;
->>>>>>> XGBoost
 
 
     TVector3 ptosvec2D(secvx - bestvx, secvy - bestvy, 0);
@@ -863,15 +773,9 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
     dlerror = sqrt(ROOT::Math::Similarity(totalCov, distanceVector)) / dl;
 
     dlos = dl / dlerror;
-<<<<<<< HEAD
-    /*
-    cout << "dl = " << dl << " dlerror = " << dlerror << endl;
-    cout << "dlos = " << dlos << endl;
-    */
-=======
+
     //cout << "dl = " << dl << " dlerror = " << dlerror << endl;
     //cout << "dlos = " << dlos << endl;
->>>>>>> XGBoost
     if (dlos < cand3DDecayLengthSigMin_ || dlos > 1000.)
       continue;
     //cout << "cut 14 " << endl;
@@ -1048,46 +952,6 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
 
 
     mva_value = -999.9;
-<<<<<<< HEAD
-    if (useAnyMVA_)
-    {
-      inputValues.clear();
-      inputValues.push_back(log10(dlos)); // 00
-      inputValues.push_back(VtxProb);     // 01
-      inputValues.push_back(agl_abs); // 02
-      inputValues.push_back(pt1);     // 03
-      inputValues.push_back(pt2);     // 04
-      inputValues.push_back(dxyos1);  // 04
-      inputValues.push_back(dxyos2);  // 04
-      inputValues.push_back(dzos1);   // 04
-      inputValues.push_back(dzos2);
-      inputValues.push_back(pt);
-      inputValues.push_back(centrality);
-      inputValues.push_back(y);
-      mva_value = mva->GetMvaValue(inputValues);
-      bdt_cut_value = bdt.getBDTCut(y, centrality, pt);
-      if (mva_value <= bdt_cut_value ) continue;
-      //cout << "---------------------------" << endl;
-      //cout << "y && cent && pt = " << y << " && " << centrality << " && " << pt << endl;
-      //cout << "bdt_weight = " << mva_value << endl;
-      //cout << "bdt_cut_value = " << bdt_cut_value << endl;
-      //if (mva_value < -1) continue;
-      //if (bdt_cut_value < -10000) continue;
-
-      theMVANew.push_back(mva_value);
-
-      // if (mva_value > -900) cout << "BDT weight = " << mva_value << endl;
-    }
-
-    // select MVA value
-    theGoodCandidates.push_back(trk);
-  }
-  /*
-  cout << "theMVANew.size() = " << theMVANew.size() << endl;
-  cout << "theGoodCandidates.size() = " << theGoodCandidates.size() << endl;
-  cout << "-----------------------------" << endl;
-  */
-=======
     if (useAnyMVA_ && onnxRuntime_)
     {
     //cout << "*** it = " << it << " **" << endl;
@@ -1155,7 +1019,6 @@ void VertexCompositeSelector::fillRECO(edm::Event &iEvent, const edm::EventSetup
 		// select MVA value
 		theGoodCandidates.push_back(trk);
 	}
->>>>>>> XGBoost
 }
 
 // ------------ method called once each job just before starting event

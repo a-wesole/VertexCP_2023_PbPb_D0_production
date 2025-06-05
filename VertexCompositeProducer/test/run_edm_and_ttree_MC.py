@@ -23,7 +23,7 @@ process.HiForestInfo.info = cms.vstring("HiForest, miniAOD, 132X, mc")
 
 # Limit the output messages
 process.load('FWCore.MessageService.MessageLogger_cfi')
-process.MessageLogger.cerr.FwkReport.reportEvery = 10000
+process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 process.options = cms.untracked.PSet(wantSummary = cms.untracked.bool(True))
 
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32((-1))) 
@@ -34,9 +34,9 @@ process.TFileService = cms.Service("TFileService",
 # Define the input source
 
 process.source = cms.Source("PoolSource",
-    duplicateCheckMode = cms.untracked.string("noDuplicateCheck"),
+    #duplicateCheckMode = cms.untracked.string("noDuplicateCheck"),
     fileNames = cms.untracked.vstring(
-       'root://xrootd-cms.infn.it//store/mc/HINPbPbSpring23MiniAOD/promptD0ToKPi_PT-1_TuneCP5_5p36TeV_pythia8-evtgen/MINIAODSIM/132X_mcRun3_2023_realistic_HI_v9-v2/2560000/04335bea-a283-40ea-a050-d71e1b7fac6b.root'
+        'file:04335bea-a283-40ea-a050-d71e1b7fac6b.root'
        #'root://xrootd-cms.infn.it//store/hidata/HIRun2023A/HIPhysicsRawPrime0/MINIAOD/PromptReco-v2/000/374/668/00000/06179488-b7e6-44f6-bec9-eb242a290ffd.root'
        # 'root://xrootd-cms.infn.it//store/hidata/HIRun2023A/HIPhysicsRawPrime0/MINIAOD/PromptReco-v2/000/375/055/00000/2d8cd07d-f92f-44df-8e0f-eb28dca3108b.root'
     ),
@@ -123,11 +123,18 @@ process.d0selectorNewReduced.DCAValCollection = cms.InputTag("generalD0Candidate
 process.d0selectorNewReduced.DCAErrCollection = cms.InputTag("generalD0CandidatesNew:DCAErrorsD0")
 process.d0selectorNewReduced.cand3DDecayLengthSigMin = cms.untracked.double(0.)
 process.d0selectorNewReduced.cand3DPointingAngleMax = cms.untracked.double(1.0)
-process.d0selectorNewReduced.trkNHitMin = cms.untracked.int32(11)
+process.d0selectorNewReduced.D0 = cms.InputTag("generalD0CandidatesNew:D0")
+process.d0selectorNewReduced.input_names = cms.vstring('input')
+process.d0selectorNewReduced.output_names = cms.vstring('probabilities')
+process.d0selectorNewReduced.onnxModelFileName = cms.string("XGBoost_Model_0428_0_OnlyPrompt.onnx")
+process.d0selectorNewReduced.mvaCut = cms.double(0.9)
+process.d0selectorNewReduced.isCentrality = cms.bool(True) # Centrality 
+process.d0selectorNewReduced.useAnyMVA = cms.bool(True); #only set true if you are assigning BDT values  +++change 
 
 
 process.d0ana_newreduced = process.d0ana.clone()
-process.d0ana_newreduced.VertexCompositeCollection = cms.untracked.InputTag("d0selectorNewReduced:D0")
+#process.d0ana_newreduced.VertexCompositeCollection = cms.untracked.InputTag("d0selectorNewReduced:D0")
+process.d0ana_newreduced.patCompositeCandidates = cms.untracked.InputTag("d0selectorNewReduced:D0")
 process.d0ana_newreduced.DCAValCollection = cms.InputTag("d0selectorNewReduced:DCAValuesNewD0")
 process.d0ana_newreduced.DCAErrCollection = cms.InputTag("d0selectorNewReduced:DCAErrorsNewD0")
 process.d0ana_newreduced.isCentrality = cms.bool(True) # Centrality 
@@ -135,6 +142,10 @@ process.d0ana_newreduced.centralityBinLabel = cms.InputTag("centralityBin", "HFt
 process.d0ana_newreduced.centralitySrc = cms.InputTag("hiCentrality") #central
 process.d0ana_newreduced.doGenNtuple = cms.untracked.bool(True) #MConly
 process.d0ana_newreduced.doGenMatching = cms.untracked.bool(True) #MConly
+process.d0ana_newreduced.useAnyMVA = cms.bool(True); #only set true if you are assigning BDT values +++ change  
+process.d0ana_newreduced.MVACollection = cms.InputTag("d0selectorNewReduced:MVAValuesNewD0:ANASKIM")
+process.d0ana_newreduced.MVACollection2 = cms.InputTag("d0selectorNewReduced:MVAValuesNewD02:ANASKIM")
+
 
 process.d0ana_seq2 = cms.Sequence(process.d0selectorNewReduced * process.d0ana_newreduced)
 

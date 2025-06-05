@@ -333,7 +333,7 @@ private:
 //
 
 VertexCompositeSelector::VertexCompositeSelector(const edm::ParameterSet &iConfig, const ONNXRuntime *cache)
-	:bdt("/u/user/jun502s/dstarana/test/CMSSW_13_2_10/src/VertexCompositeAnalysis/VertexCompositeAnalyzer/data/bdt_cuts.csv"), input_shapes_(), onnxRuntime_(cache)
+	:bdt("/eos/home-j/junseok/analysis/D0study/test/CMSSW_13_2_11/src/VertexCompositeAnalysis/VertexCompositeAnalyzer/data/bdt_cuts.csv"), input_shapes_(), onnxRuntime_(cache)
 {
 	string a1 = "log3ddls";
 	string a2 = "nVtxProb";
@@ -530,7 +530,7 @@ void VertexCompositeSelector::produce(edm::Event &iEvent, const edm::EventSetup 
 if (useAnyMVA_) {
     
     auto mvas = std::make_unique<MVACollection>(theMVANew.begin(), theMVANew.end());
-    auto mvas_xg = std::make_unique<MVACollection>(theMVANew.begin(), theMVANew.end());
+    auto mvas_xg = std::make_unique<MVACollection>(theMVANew_xg.begin(), theMVANew_xg.end());
     
     iEvent.put(std::move(mvas), Form("MVAValuesNew%s", d0IDName_.c_str()));
     iEvent.put(std::move(mvas_xg), Form("MVAValuesNew%s2", d0IDName_.c_str()));

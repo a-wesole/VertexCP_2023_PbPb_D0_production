@@ -172,6 +172,8 @@ class VertexCompositeTreeProducer : public edm::one::EDAnalyzer<> {
 		float gen_agl2D_abs[MAXCAN];
 		float gen_dl[MAXCAN];
 		float gen_dl2D[MAXCAN];
+		float twoTrackDCA[MAXCAN];
+
 
 
 		//dau info
@@ -490,6 +492,7 @@ VertexCompositeTreeProducer::fillRECO(const edm::Event& iEvent, const edm::Event
 
 		phi[it] = trk.phi();
 		flavor[it] = trk.pdgId()/abs(trk.pdgId());
+		twoTrackDCA[it] = trk.userFloat("track3DDCA"); 
 
 		mva[it] = 0.0;
 		if(useAnyMVA_){ mva[it] = (*mvavalues)[it];
@@ -908,6 +911,7 @@ VertexCompositeTreeProducer::initTree()
 			VertexCompositeNtuple->Branch("Dtrk2DzError1",&Dtrk2DzError1,"Dtrk2DzError1[candSize]/F");
 			VertexCompositeNtuple->Branch("Dtrk1DxyError1",&Dtrk1DxyError1,"Dtrk1DxyError1[candSize]/F");
 			VertexCompositeNtuple->Branch("Dtrk2DxyError1",&Dtrk2DxyError1,"Dtrk2DxyError1[candSize]/F");
+			VertexCompositeNtuple->Branch("twoTrackDCA",&twoTrackDCA, "twoTrackDCA[candSize]/F");
 
 
 			if(doGenMatching_)
